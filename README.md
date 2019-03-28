@@ -25,6 +25,8 @@ The following software must be installed/present on your local machine before yo
 Make sure all the required software (listed above) is installed, then cd to the directory containing this README.md file, and run:
 
     $ packer build -force -var "version=1.0.0" -var "access_token=${VAGRANT_CLOUD_TOKEN}" centos7-k8s.json
+    $ vagrant box remove topinfra/centos7-k8s
+    $ vagrant box add builds/virtualbox-centos7-k8s.box --name topinfra/centos7-k8s
 
 After a few minutes, Packer should tell you the box was generated successfully, and the box was uploaded to Vagrant Cloud.
 
