@@ -48,9 +48,9 @@ nmcli connection show
 
 # using socat to port forward in helm tiller
 # install  kmod and ceph-common for rook
-yum install -y epel-release
+yum install -y deltarpm epel-release
 yum install -y bash-completion jq
-yum install -y wget curl conntrack-tools vim net-tools telnet tcpdump bind-utils socat ntp kmod ceph-common dos2unix
+yum install -y aria2 wget curl conntrack-tools vim net-tools telnet tcpdump bind-utils socat ntp kmod ceph-common dos2unix
 
 # enable ntp to sync time
 echo 'sync time'
@@ -79,9 +79,44 @@ fi
 
 usermod -aG docker vagrant
 rm -rf ~/.docker/
-yum install -y docker.x86_64
+yum -v list docker.x86_64 --show-duplicates
+#yum install -y docker.x86_64
 # To fix docker exec error, downgrade docker version, see https://github.com/openshift/origin/issues/21590
-yum downgrade -y docker-1.13.1-75.git8633870.el7.centos.x86_64 docker-client-1.13.1-75.git8633870.el7.centos.x86_64 docker-common-1.13.1-75.git8633870.el7.centos.x86_64
+#yum downgrade -y docker-1.13.1-75.git8633870.el7.centos.x86_64 docker-client-1.13.1-75.git8633870.el7.centos.x86_64 docker-common-1.13.1-75.git8633870.el7.centos.x86_64
+
+# k8s 1.12   supports docker 18.06
+# k8s 1.13.3 supports docker 18.09.1
+# k8s 1.13.4 supports docker 18.09.3
+yum remove -y docker \
+  docker-client \
+  docker-client-latest \
+  docker-common \
+  docker-latest \
+  docker-latest-logrotate \
+  docker-logrotate \
+  docker-engine
+yum install -y yum-utils \
+  device-mapper-persistent-data \
+  lvm2
+yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+yum update -y
+yum list docker-ce --showduplicates | sort -r
+yum install -y docker-ce-18.09.3 docker-ce-cli-18.09.3 containerd.io
+
+if [[ ! -f /usr/local/bin/docker-compose ]]; then
+    aria2c --file-allocation=none -c -x 10 -s 10 -m 0 --console-log-level=notice --log-level=notice --summary-interval=0 \
+    -d /usr/local/bin -o docker-compose \
+    https://github.com/docker/compose/releases/download/1.23.2/docker-compose-Linux-x86_64;
+    chmod +x /usr/local/bin/docker-compose;
+fi
+if [[ ! -f /usr/local/bin/docker-machine ]]; then
+    aria2c --file-allocation=none -c -x 10 -s 10 -m 0 --console-log-level=notice --log-level=notice --summary-interval=0 \
+    -d /usr/local/bin -o docker-machine \
+    https://github.com/docker/machine/releases/download/v0.16.1/docker-machine-Linux-x86_64;
+    chmod +x /usr/local/bin/docker-machine;
+fi
 
 yum install -y etcd
 systemctl daemon-reload
